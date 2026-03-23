@@ -9,15 +9,29 @@ if [ -z "$REPO_NAME" ]; then
     exit 1
 fi
 
-CONFIG_FILE="/workspace/fleet_config.json"
+CONFIG_FILE="fleet_config.json"
 REPOS_DIR="/workspace/repos"
 
-# Extract repo URL from fleet_config.json using python (to avoid jq dependency)
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Error: $CONFIG_FILE not found in current directory. Please run this script from a session directory where it is symlinked."
+    exit 1
+fi
+
+# Extract repo URL and primary branch from fleet_config.json using python (to avoid jq dependency)
 REPO_URL=$(python3 -c "import json; print(next((r['url'] for r in json.load(open('$CONFIG_FILE'))['repositories'] if r['name'] == '$REPO_NAME'), ''))")
+PRIMARY_BRANCH=$(python3 -c "import json; print(next((r.get('primary_branch', 'main') for r in json.load(open('$CONFIG_FILE'))['repositories'] if r['name'] == '$REPO_NAME'), 'main'))")
 
 if [ -z "$REPO_URL" ]; then
-    echo "Error: Repository '$REPO_NAME' not found in $CONFIG_FILE"
+    echo "Error: Repository '$REPO_NAME' not found in $CONFIG_FILE."
+    echo "Available repositories are:"
+    python3 -c "import json; [print(f\" - {r['name']}\") for r in json.load(open('$CONFIG_FILE'))['repositories']]"
+    echo "Action required: Please check fleet_config.json and try again with a valid repository name."
     exit 1
+fi
+
+# If no branch is provided, default to the primary branch
+if [ -z "$2" ]; then
+    BRANCH_NAME=$PRIMARY_BRANCH
 fi
 
 BARE_REPO="$REPOS_DIR/$REPO_NAME.git"
@@ -42,8 +56,8 @@ echo "Adding worktree: $BRANCH_NAME -> $WORKTREE_PATH"
 if git -C "$BARE_REPO" rev-parse --verify "$BRANCH_NAME" >/dev/null 2>&1; then
     git -C "$BARE_REPO" worktree add "$WORKTREE_PATH" "$BRANCH_NAME"
 else
-    echo "Branch '$BRANCH_NAME' does not exist. Creating it from the default branch."
-    git -C "$BARE_REPO" worktree add -b "$BRANCH_NAME" "$WORKTREE_PATH"
+    echo "Branch '$BRANCH_NAME' does not exist. Creating it from the primary branch '$PRIMARY_BRANCH'."
+    git -C "$BARE_REPO" worktree add -b "$BRANCH_NAME" "$WORKTREE_PATH" "$PRIMARY_BRANCH"
 fi
 
 echo "Worktree initialized at $WORKTREE_PATH"

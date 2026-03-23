@@ -22,7 +22,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
 RUN npm install -g gitlab-ci-local
 
 # Install MCP Servers
-RUN npm install -g @structured-world/gitlab-mcp \
+RUN npm install -g @zereight/mcp-gitlab \
     @sentry/mcp-server \
     @roychri/mcp-server-asana
 

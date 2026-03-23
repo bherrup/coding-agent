@@ -114,6 +114,15 @@ def get_session_by_id(session_id):
     conn.close()
     return row
 
+def get_session_by_thread_ts(thread_ts):
+    """Returns the session_id for a given thread_ts."""
+    conn = sqlite3.connect(config.DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('SELECT session_id FROM sessions WHERE slack_thread_ts = ?', (thread_ts,))
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else None
+
 def delete_all_sessions():
     """Deletes all session records from the database."""
     conn = sqlite3.connect(config.DB_PATH)

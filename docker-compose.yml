@@ -9,6 +9,7 @@ services:
       # Persistent Workspace
       - ./local-workspace:/workspace
       # Configuration & Prompts (Development)
+      - ./app:/home/agent/app
       - ./fleet_config.json:/workspace/fleet_config.json:ro
       - ./prompts:/workspace/prompts:ro
       - ./GEMINI.md:/workspace/GEMINI.md:ro
@@ -18,19 +19,25 @@ services:
       - CDK_ENV=local
       - MAX_TOKENS=2000000
       - AGENT_TIMEOUT=1800
-      - BOT_USER_ID=U12345678  # Mock Bot ID
-      
+      - BOT_USER_ID=U12345678 # Mock Bot ID
+
       # REQUIRED SECRETS (Provide these in a local .env file)
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - SLACK_APP_TOKEN=${SLACK_APP_TOKEN}
       - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN}
-      
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GH_TOKEN=${GH_TOKEN}
+
       # OPTIONAL MCP SECRETS
       - GITLAB_PAT=${GITLAB_PAT}
+      - GITLAB_URL=${GITLAB_URL}
       - SENTRY_TOKEN=${SENTRY_TOKEN}
+      - SENTRY_ORG=${SENTRY_ORG}
+      - SENTRY_PROJECTS=${SENTRY_PROJECTS}
       - ASANA_PAT=${ASANA_PAT}
       - STITCH_API_KEY=${STITCH_API_KEY}
-    
+      - STITCH_PROJECT_ID=${STITCH_PROJECT_ID}
+
     # Ensure the container stays alive or starts the bridge
     restart: unless-stopped
 

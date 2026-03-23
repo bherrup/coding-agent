@@ -35,40 +35,53 @@ def generate_gemini_settings():
             logger.error(f"Failed to load fleet_config.json: {e}")
 
     settings = {
-        "mcp_servers": {
+        "mcpServers": {
             "gitlab": {
-                "command": "npx",
-                "args": ["-y", "@structured-world/gitlab-mcp"],
-                "env": {
-                    "GITLAB_PAT": os.environ.get("GITLAB_PAT"),
-                    "GITLAB_URL": os.environ.get("GITLAB_URL", "https://gitlab.com")
-                }
+                "type": "http",
+                "url": f"{os.environ.get('GITLAB_URL', 'https://gitlab.com').rstrip('/')}/api/v4/mcp"
             },
             "sentry": {
-                "command": "npx",
-                "args": ["-y", "@sentry/mcp-server"],
+                "command": "bash",
+                "args": [
+                    "-c",
+                    f'sentry-mcp --access-token={os.environ.get("SENTRY_TOKEN", "")} --organization-slug={os.environ.get("SENTRY_ORG", "")} --project-slug={os.environ.get("SENTRY_PROJECTS", "")} | grep --line-buffered "^\\{{"',
+                ],
                 "env": {
-                    "SENTRY_AUTH_TOKEN": os.environ.get("SENTRY_TOKEN")
-                }
+                    "SENTRY_AUTH_TOKEN": os.environ.get("SENTRY_TOKEN", ""),
+                    "SENTRY_ACCESS_TOKEN": os.environ.get("SENTRY_TOKEN", ""),
+                    "SENTRY_ORG": os.environ.get("SENTRY_ORG", ""),
+                    "SENTRY_PROJECT": os.environ.get("SENTRY_PROJECTS", ""),
+                    "LOG_LEVEL": "error",
+                    "NODE_ENV": "production",
+                    "NODE_OPTIONS": "--no-warnings",
+                    "DEBUG": "",
+                },
+                "trust": True,
             },
             "asana": {
-                "command": "npx",
-                "args": ["-y", "@roychri/mcp-server-asana"],
+                "command": "bash",
+                "args": [
+                    "-c",
+                    'mcp-server-asana | grep --line-buffered "^{"',
+                ],
                 "env": {
-                    "ASANA_ACCESS_TOKEN": os.environ.get("ASANA_PAT")
-                }
+                    "ASANA_ACCESS_TOKEN": os.environ.get("ASANA_PAT", ""),
+                    "ASANA_PERSONAL_ACCESS_TOKEN": os.environ.get("ASANA_PAT", ""),
+                    "LOG_LEVEL": "error",
+                    "NODE_ENV": "production",
+                    "NODE_OPTIONS": "--no-warnings",
+                    "DEBUG": "",
+                },
+                "trust": True,
             },
-            "stitch": {
-                "command": "npx",
-                "args": ["-y", "@google/stitch-mcp"],
-                "env": {
-                    "STITCH_API_KEY": os.environ.get("STITCH_API_KEY", "")
-                }
-            }
         },
         "extensions": {
             "maestro": {
-                "subagents": subagents
+                "subagents": subagents,
+                "env": {
+                    "GITHUB_TOKEN": os.environ.get("GITHUB_TOKEN", ""),
+                    "GH_TOKEN": os.environ.get("GH_TOKEN", ""),
+                }
             }
         }
     }
@@ -104,10 +117,24 @@ def process_task(session_id, thread_ts, channel, clean_text, say, active_tasks):
     try:
         cmd = ["gemini", "--yolo", "--include-directories", str(config.WORKSPACE_ROOT), "--output-format", "stream-json"]
         
-        if (session_dir / ".gemini").exists():
+        is_resuming = (session_dir / ".gemini").exists()
+        if is_resuming:
             cmd += ["--resume", "latest"]
+        
+        # Enhance continuation prompts to maintain Tech Lead context
+        final_prompt = clean_text
+        if is_resuming and clean_text.lower() in ["go", "approved", "approve", "proceed"]:
+            final_prompt = (
+                f"User: {clean_text}. \n\n"
+                "System: The user has approved your plan. You are now in the EXECUTION PHASE. "
+                "Do NOT restart research. Follow the Execution Phase protocol strictly:\n"
+                "1. Verify or create an Asana task in the configured 'asana_project' for this repository. When identifying the ticket number, first check for a custom field with a type of 'id'. If it exists, use that; otherwise, use the internal Asana Task GID.\n"
+                "2. Create a branch formatted as '<type>/<ticket_number>-<slug>' off the configured primary branch.\n"
+                "3. Delegate implementation to specialists and commit early and often.\n"
+                "4. When done, use the git-specialist to create the Merge Request."
+            )
             
-        cmd.append(clean_text)
+        cmd.append(final_prompt)
         logger.info(f"Executing Gemini command: {' '.join(cmd)} in CWD: {session_dir}")
 
         process = subprocess.Popen(
@@ -116,7 +143,8 @@ def process_task(session_id, thread_ts, channel, clean_text, say, active_tasks):
             stderr=subprocess.STDOUT,
             text=True,
             bufsize=1,
-            cwd=str(session_dir)
+            cwd=str(session_dir),
+            start_new_session=True
         )
         
         active_tasks[session_id] = {
