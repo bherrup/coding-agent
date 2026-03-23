@@ -4,7 +4,7 @@ import sys
 # Add app folder to path for testing
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from app import check_for_errors
+from fleet.utils import check_for_errors
 
 def test_check_for_errors() -> None:
     """Test basic error checking logic."""

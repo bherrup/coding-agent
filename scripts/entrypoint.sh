@@ -29,4 +29,4 @@ fi
 
 # Execute the application via uv
 echo "🚀 Starting Fleet Agent..."
-exec uv run python /home/agent/app/app.py
+exec uv run python /home/agent/app/main.py
