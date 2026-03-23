@@ -57,6 +57,13 @@ def generate_gemini_settings():
                 "env": {
                     "ASANA_ACCESS_TOKEN": os.environ.get("ASANA_PAT")
                 }
+            },
+            "stitch": {
+                "command": "npx",
+                "args": ["-y", "@google/stitch-mcp"],
+                "env": {
+                    "STITCH_API_KEY": os.environ.get("STITCH_API_KEY", "")
+                }
             }
         },
         "extensions": {

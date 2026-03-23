@@ -29,6 +29,7 @@ services:
       - GITLAB_PAT=${GITLAB_PAT}
       - SENTRY_TOKEN=${SENTRY_TOKEN}
       - ASANA_PAT=${ASANA_PAT}
+      - STITCH_API_KEY=${STITCH_API_KEY}
     
     # Ensure the container stays alive or starts the bridge
     restart: unless-stopped
