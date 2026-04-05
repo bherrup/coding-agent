@@ -1,0 +1,61 @@
+steps:
+  # 1. Pull the previous 'latest' image for layer caching
+  - name: "gcr.io/cloud-builders/docker"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        docker pull us-central1-docker.pkg.dev/$PROJECT_ID/your-artifact-registry-repo/fleet-agent:latest || true
+
+  # 2. Build the container image with cache-from
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "--cache-from", "us-central1-docker.pkg.dev/$PROJECT_ID/your-artifact-registry-repo/fleet-agent:latest",
+        "-t", "us-central1-docker.pkg.dev/$PROJECT_ID/your-artifact-registry-repo/fleet-agent:$BUILD_ID",
+        "-t", "us-central1-docker.pkg.dev/$PROJECT_ID/your-artifact-registry-repo/fleet-agent:latest",
+        ".",
+      ]
+
+  # 3. Push the container image to Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "push",
+        "us-central1-docker.pkg.dev/$PROJECT_ID/your-artifact-registry-repo/fleet-agent",
+        "--all-tags"
+      ]
+
+  # 4. Prepare and Build Manifests
+  - name: "gcr.io/cloud-builders/gcloud"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        # Replace the generic placeholder 'GCP_PROJECT_ID' with the actual project ID
+        find k8s/ -type f -exec sed -i "s|GCP_PROJECT_ID|$PROJECT_ID|g" {} +
+        
+        # Install kustomize
+        gcloud components install kustomize --quiet
+        
+        # Update the image tag in kustomization.yaml
+        cd k8s
+        kustomize edit set image us-central1-docker.pkg.dev/$PROJECT_ID/your-artifact-registry-repo/fleet-agent=us-central1-docker.pkg.dev/$PROJECT_ID/your-artifact-registry-repo/fleet-agent:$BUILD_ID
+        
+        # Build the final combined manifest
+        kustomize build . > combined.yaml
+
+  # 5. Deploy to GKE Autopilot
+  - name: "gcr.io/cloud-builders/gke-deploy"
+    args:
+      - "run"
+      - "--filename=k8s/combined.yaml"
+      - "--image=us-central1-docker.pkg.dev/$PROJECT_ID/your-artifact-registry-repo/fleet-agent:$BUILD_ID"
+      - "--location=us-central1"
+      - "--cluster=fleet-autopilot-cluster"
+      - "--timeout=10m"
+
+images:
+  - "us-central1-docker.pkg.dev/$PROJECT_ID/your-artifact-registry-repo/fleet-agent:latest"
+  - "us-central1-docker.pkg.dev/$PROJECT_ID/your-artifact-registry-repo/fleet-agent:$BUILD_ID"

@@ -1,0 +1,11 @@
+{
+  "_context": {
+    "description": "Primary quality manifesto for the Platinum project engine.",
+    "purpose": "Provides the fleet (and subagents) with the standard commands required to validate code quality before opening merge requests.",
+    "hierarchy": "This file is the highest priority for quality checks, overriding Makefile or language manifests."
+  },
+  "lint": "uv run ruff check .",
+  "format": "uv run ruff format .",
+  "type-check": "uv run ty check",
+  "test": "uv run pytest"
+}

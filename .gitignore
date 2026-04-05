@@ -35,5 +35,10 @@ Thumbs.db
 *.swp
 *.swo
 
-# Docker
-.docker/
+# Kubernetes
+k8s/secrets.yaml
+k8s/output/
+.kubeconfig
+kubeconfig
+*.kubeconfig
+.kustomize/

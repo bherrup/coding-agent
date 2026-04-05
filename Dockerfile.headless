@@ -1,4 +1,7 @@
-# Stage 1: Build & Setup
+# 🤖 Platinum: Headless Fleet Agent (Interactive CLI Mode)
+# Use this Dockerfile to run the Fleet Tech Lead session locally
+# without needing Slack or a server.
+
 FROM python:3.12-slim AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -17,8 +20,7 @@ RUN apt-get update && apt-get install -y \
 # 2. Install Tools (Static Layers)
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Use a build argument to intentionally break the cache for NPM packages when needed
-ARG NPM_CACHE_BUST=1
+# Install Gemini and MCP Servers
 RUN npm install -g @google/gemini-cli@latest \
     @zereight/mcp-gitlab \
     @sentry/mcp-server \
@@ -27,20 +29,19 @@ RUN npm install -g @google/gemini-cli@latest \
 # 3. Create User & Workspace
 RUN groupadd -g 1001 agent && \
     useradd -u 1001 -g agent -m -s /bin/bash agent && \
-    mkdir -p /workspace/repos /mnt/persistence /home/agent/app /home/agent/.gemini && \
-    chown -R agent:agent /workspace /mnt/persistence /home/agent
+    mkdir -p /workspace/repos /home/agent/app /home/agent/.gemini && \
+    chown -R agent:agent /workspace /home/agent
 
 USER agent
 WORKDIR /home/agent/app
 
 # 4. Pre-install Python Dependencies (Cacheable Layer)
-# Copy ONLY dependency files first
 COPY --chown=agent:agent app/pyproject.toml app/uv.lock ./
 # Create venv outside the app directory to prevent host mount conflicts
 ENV UV_PROJECT_ENVIRONMENT="/home/agent/.venv"
 RUN uv sync --frozen --no-install-project
 
-# 5. Copy Application Code & Configs (Volatile Layer)
+# 5. Copy Application Code & Configs
 WORKDIR /workspace
 COPY --chown=agent:agent app/ /home/agent/app/
 COPY --chown=agent:agent fleet_config.json ./
@@ -49,10 +50,17 @@ COPY --chown=agent:agent scripts/ ./scripts/
 COPY --chown=agent:agent prompts/ ./prompts/
 COPY --chown=agent:agent skills/ ./.gemini/skills/
 COPY --chown=agent:agent workflows/ ./.gemini/workflows/
+COPY --chown=agent:agent .gemini/ ./.gemini/
 
 # Ensure skills are also available in the home directory for the CLI
 RUN ln -s /workspace/.gemini/skills /home/agent/.gemini/skills
 
 # Final setup
 ENV PATH="/home/agent/.venv/bin:$PATH"
-ENTRYPOINT ["/bin/bash", "/workspace/scripts/entrypoint.sh"]
+ENV WORKSPACE_ROOT="/workspace"
+ENV SESSIONS_ROOT="/workspace/sessions"
+
+# EXPOSE NO PORTS - This is an interactive CLI container
+
+# Launch directly into the Fleet Shell
+ENTRYPOINT ["/bin/bash", "/workspace/scripts/fleet-shell.sh"]
