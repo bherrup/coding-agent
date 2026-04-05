@@ -1,0 +1,113 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fleet-agent
+  labels:
+    app: fleet-agent
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # Ensures old pod terminates before new one starts, required for ReadWriteOnce PVCs
+  selector:
+    matchLabels:
+      app: fleet-agent
+  template:
+    metadata:
+      labels:
+        app: fleet-agent
+      annotations:
+        cloud.google.com/extended-duration: "true"
+    spec:
+      terminationGracePeriodSeconds: 600
+      securityContext:
+        fsGroup: 1001
+      containers:
+      - name: fleet-agent
+        securityContext:
+          runAsUser: 1001
+          runAsGroup: 1001
+          allowPrivilegeEscalation: false
+        # The image tag will be updated by Cloud Build/Kustomize during deployment. Using a placeholder or latest here.
+        image: us-central1-docker.pkg.dev/GCP_PROJECT_ID/your-artifact-registry-repo/fleet-agent:latest
+        imagePullPolicy: Always
+        resources:
+          requests:
+            cpu: "2"
+            memory: "4Gi"
+            ephemeral-storage: "5Gi"
+          limits:
+            cpu: "4"
+            memory: "8Gi"
+            ephemeral-storage: "10Gi"
+        ports:
+        - containerPort: 8080
+        env:
+        - name: WORKSPACE_ROOT
+          value: "/mnt/persistence"
+        - name: SESSIONS_ROOT
+          value: "/mnt/persistence/sessions"
+        - name: ACTIVE_SESSIONS_ROOT
+          value: "/mnt/persistence/active_sessions"
+        - name: DB_PATH
+          value: "/mnt/persistence/fleet.db"
+        - name: FLEET_CONFIG_PATH
+          value: "/mnt/persistence/fleet_config.json"
+        - name: GEMINI_FORCE_FILE_STORAGE
+          value: "true"
+        - name: PORT
+          value: "8080"
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: fleet-agent-secrets
+              key: GITHUB_TOKEN
+              optional: true
+        - name: GITLAB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: fleet-agent-secrets
+              key: GITLAB_PAT
+              optional: true
+        - name: ASANA_PAT
+          valueFrom:
+            secretKeyRef:
+              name: fleet-agent-secrets
+              key: ASANA_PAT
+              optional: true
+        - name: SENTRY_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: fleet-agent-secrets
+              key: SENTRY_TOKEN
+              optional: true
+        envFrom:
+        - secretRef:
+            name: fleet-agent-secrets
+            optional: true
+        volumeMounts:
+        - name: persistence
+          mountPath: /mnt/persistence
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 45
+          periodSeconds: 20
+          timeoutSeconds: 10
+          failureThreshold: 5
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 60"]
+      volumes:
+      - name: persistence
+        persistentVolumeClaim:
+          claimName: fleet-persistence

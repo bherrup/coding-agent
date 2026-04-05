@@ -23,6 +23,7 @@ htmlcov/
 # Gemini CLI / Agent Specific
 .gemini/
 local-workspace/
+fleet_config.json
 .context_usage
 .gemini_telemetry.log
 gemini-client-error-*.json
@@ -35,5 +36,10 @@ Thumbs.db
 *.swp
 *.swo
 
-# Docker
-.docker/
+# Kubernetes
+k8s/secrets.yaml
+k8s/output/
+.kubeconfig
+kubeconfig
+*.kubeconfig
+.kustomize/

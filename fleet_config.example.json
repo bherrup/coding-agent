@@ -1,0 +1,77 @@
+{
+  "repositories": [
+    {
+      "name": "coding-agent",
+      "url": "git@github.com:your-organization/coding-agent.git",
+      "platform": "github",
+      "description": "Example repository for open source Platinum installation."
+    }
+  ],
+  "subagents": [
+    {
+      "name": "frontend-specialist",
+      "description": "Expert in React, HTML, and CSS. (Active Skill: frontend-specialist)",
+      "system_prompt_file": "prompts/frontend-specialist.md"
+    },
+    {
+      "name": "backend-specialist",
+      "description": "Expert in Python backend systems. (Active Skill: backend-specialist)",
+      "system_prompt_file": "prompts/backend-specialist.md"
+    },
+    {
+      "name": "infrastructure-specialist",
+      "description": "Expert in AWS CDK, Docker, and CI/CD. (Active Skill: infrastructure-specialist)",
+      "system_prompt_file": "prompts/infrastructure-specialist.md"
+    },
+    {
+      "name": "git-specialist",
+      "description": "Expert in Git best practices, commit history, and change management. (Active Skill: git-specialist)",
+      "system_prompt_file": "prompts/git-specialist.md"
+    },
+    {
+      "name": "quality-specialist",
+      "description": "Expert in code quality, linting (ruff), and type-checking (pyright).",
+      "system_prompt_file": "prompts/quality-specialist.md"
+    },
+    {
+      "name": "testing-specialist",
+      "description": "Expert in Quality Assurance, automated testing, and strategic mocking. (Active Skill: testing-specialist)",
+      "system_prompt_file": "prompts/testing-specialist.md"
+    },
+    {
+      "name": "system-design-specialist",
+      "description": "Expert in architecture, availability, and system resilience. (Active Skill: system-design-specialist)",
+      "system_prompt_file": "prompts/system-design-specialist.md"
+    },
+    {
+      "name": "data-engineering-specialist",
+      "description": "Expert in Data Engineering and downstream integrity. (Active Skill: data-engineering-specialist)",
+      "system_prompt_file": "prompts/data-engineering-specialist.md"
+    },
+    {
+      "name": "product-manager-specialist",
+      "description": "Expert in representing the customer. (Active Skill: product-manager-specialist)",
+      "system_prompt_file": "prompts/product-manager-specialist.md"
+    },
+    {
+      "name": "security-specialist",
+      "description": "Expert in application security and vulnerability management. (Active Skill: security-specialist)",
+      "system_prompt_file": "prompts/security-specialist.md"
+    },
+    {
+      "name": "observability-specialist",
+      "description": "Expert in SRE, logging, and monitoring. (Active Skill: observability-specialist)",
+      "system_prompt_file": "prompts/observability-specialist.md"
+    },
+    {
+      "name": "docs-specialist",
+      "description": "Expert in technical writing and API specs. (Active Skill: docs-specialist)",
+      "system_prompt_file": "prompts/docs-specialist.md"
+    },
+    {
+      "name": "performance-specialist",
+      "description": "Expert in optimization and database tuning. (Active Skill: performance-specialist)",
+      "system_prompt_file": "prompts/performance-specialist.md"
+    }
+  ]
+}

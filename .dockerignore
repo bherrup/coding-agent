@@ -1,0 +1,11 @@
+# Ignore project-specific instructions (Gemini CLI)
+GEMINI.md
+
+# Ignore local environment files
+.env
+.venv/
+__pycache__/
+*.pyc
+.git/
+.pytest_cache/
+local-workspace/
